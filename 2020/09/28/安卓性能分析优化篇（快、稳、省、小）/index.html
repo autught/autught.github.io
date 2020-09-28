@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.2.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="安卓性能分析优化篇（快、稳、省、小）一、启动优化app冷启动过程中不要进行耗时操作，比如在Application中第三方sdk的初始化可以开个子线程进行处理 二、代码布局优化 减少布局层级   Layout的选择以减少嵌套为主 尽量不要在嵌套布局中使用RelativeLayout、ConstraintLayout 尽量不要在嵌套的LinearLayout中同时使用weight属性 布局层级超过5层">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Hexo">
+<meta property="og:url" content="http://example.com/2020/09/28/%E5%AE%89%E5%8D%93%E6%80%A7%E8%83%BD%E5%88%86%E6%9E%90%E4%BC%98%E5%8C%96%E7%AF%87%EF%BC%88%E5%BF%AB%E3%80%81%E7%A8%B3%E3%80%81%E7%9C%81%E3%80%81%E5%B0%8F%EF%BC%89/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="安卓性能分析优化篇（快、稳、省、小）一、启动优化app冷启动过程中不要进行耗时操作，比如在Application中第三方sdk的初始化可以开个子线程进行处理 二、代码布局优化 减少布局层级   Layout的选择以减少嵌套为主 尽量不要在嵌套布局中使用RelativeLayout、ConstraintLayout 尽量不要在嵌套的LinearLayout中同时使用weight属性 布局层级超过5层">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2020-09-28T02:56:34.287Z">
+<meta property="article:modified_time" content="2020-07-20T08:03:39.377Z">
+<meta property="article:author" content="John Doe">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://example.com/2020/09/28/%E5%AE%89%E5%8D%93%E6%80%A7%E8%83%BD%E5%88%86%E6%9E%90%E4%BC%98%E5%8C%96%E7%AF%87%EF%BC%88%E5%BF%AB%E3%80%81%E7%A8%B3%E3%80%81%E7%9C%81%E3%80%81%E5%B0%8F%EF%BC%89/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title> | Hexo</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Hexo</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2020/09/28/%E5%AE%89%E5%8D%93%E6%80%A7%E8%83%BD%E5%88%86%E6%9E%90%E4%BC%98%E5%8C%96%E7%AF%87%EF%BC%88%E5%BF%AB%E3%80%81%E7%A8%B3%E3%80%81%E7%9C%81%E3%80%81%E5%B0%8F%EF%BC%89/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="John Doe">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hexo">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2020-09-28 10:56:34" itemprop="dateCreated datePublished" datetime="2020-09-28T10:56:34+08:00">2020-09-28</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2020-07-20 16:03:39" itemprop="dateModified" datetime="2020-07-20T16:03:39+08:00">2020-07-20</time>
+              </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="安卓性能分析优化篇（快、稳、省、小）"><a href="#安卓性能分析优化篇（快、稳、省、小）" class="headerlink" title="安卓性能分析优化篇（快、稳、省、小）"></a>安卓性能分析优化篇（快、稳、省、小）</h1><h4 id="一、启动优化"><a href="#一、启动优化" class="headerlink" title="一、启动优化"></a>一、启动优化</h4><p>app冷启动过程中不要进行耗时操作，比如在Application中第三方sdk的初始化可以开个子线程进行处理</p>
+<h4 id="二、代码布局优化"><a href="#二、代码布局优化" class="headerlink" title="二、代码布局优化"></a>二、代码布局优化</h4><ol>
+<li><h5 id="减少布局层级"><a href="#减少布局层级" class="headerlink" title="减少布局层级"></a>减少布局层级</h5></li>
+</ol>
+<ul>
+<li>Layout的选择以减少嵌套为主</li>
+<li>尽量不要在嵌套布局中使用RelativeLayout、ConstraintLayout</li>
+<li>尽量不要在嵌套的LinearLayout中同时使用weight属性</li>
+<li>布局层级超过5层，即需要考虑布局优化</li>
+</ul>
+<h5 id="2-善用tag"><a href="#2-善用tag" class="headerlink" title="2.善用tag"></a>2.善用tag</h5><ul>
+<li><p><include>：使用include来重用布局.</p>
+</li>
+<li><p><merge>：使用merge来解决include或自定义组合ViewGroup导致的冗余层级问题. </p>
+</li>
+<li><p><ViewStub>：显示时才去加载出来</p>
+</li>
+</ul>
+<h5 id="3-使用Layout-Inspector进行布局分析与优化"><a href="#3-使用Layout-Inspector进行布局分析与优化" class="headerlink" title="3.使用Layout Inspector进行布局分析与优化"></a>3.使用<a target="_blank" rel="noopener" href="http://tools.android.com/tech-docs/layout-inspector">Layout Inspector</a>进行布局分析与优化</h5><h5 id="4-避免过度绘制-Overdraw"><a href="#4-避免过度绘制-Overdraw" class="headerlink" title="4.避免过度绘制(Overdraw)"></a>4.避免过度绘制(Overdraw)</h5><h5 id="5-不在主线程或自定义View的onDraw-方法中进行耗时操作"><a href="#5-不在主线程或自定义View的onDraw-方法中进行耗时操作" class="headerlink" title="5.不在主线程或自定义View的onDraw()方法中进行耗时操作"></a>5.不在主线程或自定义View的onDraw()方法中进行耗时操作</h5><h4 id="三、内存优化类"><a href="#三、内存优化类" class="headerlink" title="三、内存优化类"></a>三、内存优化类</h4><h5 id="1-常见内存泄漏场景"><a href="#1-常见内存泄漏场景" class="headerlink" title="1.常见内存泄漏场景"></a>1.常见内存泄漏场景</h5><p>如果在内存泄漏发生后再去找原因并修复会增加开发的成本，最好在编写代码时就能够很好地考虑内存问题，写出更高质量的代码，这里列出一些常见的内存泄漏场景，在以后的开发过程中需要避免这类问题。</p>
+<ul>
+<li>资源性对象未关闭。比如Cursor、File文件等，往往都用了一些缓冲，在不使用时，应该及时关闭它们。</li>
+</ul>
+<ul>
+<li>注册对象未注销。比如事件注册后未注销，会导致观察者列表中维持着对象的引用。</li>
+</ul>
+<ul>
+<li>类的静态变量持有大数据对象。</li>
+</ul>
+<ul>
+<li>非静态内部类的静态实例。</li>
+</ul>
+<ul>
+<li>Handler临时性内存泄漏。如果Handler是非静态的，容易导致Activity或Service不会被回收。</li>
+</ul>
+<ul>
+<li>容器中的对象没清理造成的内存泄漏。</li>
+</ul>
+<ul>
+<li>WebView。WebView存在着内存泄漏的问题，在应用中只要使用一次WebView，内存就不会被释放掉。</li>
+</ul>
+<p>除此之外，内存泄漏可监控，常见的就是用LeakCanary第三方库，这是一个检测内存泄漏的开源库，使用非常简单，可以在发生内存泄漏时告警，并且生成leak tarce分析泄漏位置，同时可以提供Dump文件进行分析。</p>
+<h5 id="2-优化内存空间"><a href="#2-优化内存空间" class="headerlink" title="2.优化内存空间"></a>2.优化内存空间</h5><p>没有内存泄漏，并不意味着内存就不需要优化，在移动设备上，由于物理设备的存储空间有限，Android 系统对每个应用进程也都分配了有限的堆内存，因此使用最小内存对象或者资源可以减小内存开销，同时让GC 能更高效地回收不再需要使用的对象，让应用堆内存保持充足的可用内存，使应用更稳定高效地运行。常见做法如下：</p>
+<ul>
+<li>对象引用。强引用、软引用、弱引用、虚引用四种引用类型，根据业务需求合理使用不同，选择不同的引用类型。</li>
+</ul>
+<ul>
+<li>减少不必要的内存开销。注意自动装箱，增加内存复用，比如有效利用系统自带的资源、视图复用、对象池、Bitmap对象的复用。</li>
+</ul>
+<ul>
+<li>使用最优的数据类型。比如针对数据类容器结构，可以使用ArrayMap数据结构，避免使用枚举类型，使用缓存Lrucache等等。</li>
+</ul>
+<ul>
+<li>图片内存优化。可以设置位图规格，根据采样因子做压缩，用一些图片缓存方式对图片进行管理等等。</li>
+</ul>
+<h5 id="3-减少安装包大小的常用方案"><a href="#3-减少安装包大小的常用方案" class="headerlink" title="3.减少安装包大小的常用方案:"></a>3.减少安装包大小的常用方案:</h5><ul>
+<li>代码混淆。使用ProGuard代码混淆器工具，它包括压缩、优化、混淆等功能。</li>
+</ul>
+<ul>
+<li>资源优化。比如使用Android Lint删除冗余资源，资源文件最少化等。</li>
+</ul>
+<ul>
+<li>图片优化。比如利用AAPT工具对PNG格式的图片做压缩处理，降低图片色彩位数等。</li>
+</ul>
+<ul>
+<li>避免重复功能的库，使用WebP图片格式等。</li>
+</ul>
+<ul>
+<li>插件化。比如功能模块放在服务器上，按需下载，可以减少安装包大小。</li>
+</ul>
+<h4 id="四、网络优化类："><a href="#四、网络优化类：" class="headerlink" title="四、网络优化类："></a>四、网络优化类：</h4><h5 id="1-减少网络数据获取的频次："><a href="#1-减少网络数据获取的频次：" class="headerlink" title="1.减少网络数据获取的频次："></a>1.减少网络数据获取的频次：</h5><p>这就减少了radio的电量消耗, 控制电量使用.</p>
+<h5 id="2-减少获取数据包的大小："><a href="#2-减少获取数据包的大小：" class="headerlink" title="2.减少获取数据包的大小："></a>2.减少获取数据包的大小：</h5><p>可以减少流量消耗，也可以让每次请求更快, 在网络情况不好的情况下也有良好表现, 提升用户体验.</p>
+<h5 id="3-Gzip压缩："><a href="#3-Gzip压缩：" class="headerlink" title="3.Gzip压缩："></a>3.Gzip压缩：</h5><p>使用Gzip来压缩request和response, 减少传输数据量, 从而减少流量消耗.</p>
+<h5 id="4-考虑使用Protocol-Buffer代替JSON："><a href="#4-考虑使用Protocol-Buffer代替JSON：" class="headerlink" title="4.考虑使用Protocol Buffer代替JSON："></a>4.考虑使用Protocol Buffer代替JSON：</h5><p>从前我们传输数据使用XML, 后来使用JSON代替了XML, 很大程度上也是为了可读性和减少数据量(当然还有映射成POJO的方便程度).</p>
+<p>Protocol Buffer是Google推出的一种数据交换格式.</p>
+<p>如果我们的接口每次传输的数据量很大的话, 可以考虑下protobuf, 会比JSON数据量小很多.</p>
+<h5 id="5-控制图片的大小："><a href="#5-控制图片的大小：" class="headerlink" title="5.控制图片的大小："></a>5.控制图片的大小：</h5><p>图片相对于接口请求来说, 数据量要大得多. 故而也是我们需要优化的一个点.</p>
+<p>我们可以在获取图片时告知服务器需要的图片的宽高, 以便服务器给出合适的图片, 避免浪费.</p>
+<h5 id="6-网络缓存："><a href="#6-网络缓存：" class="headerlink" title="6.网络缓存："></a>6.网络缓存：</h5><p>适当的缓存, 既可以让我们的应用看起来更快, 也能避免一些不必要的流量消耗.</p>
+<h5 id="7-打包网络请求："><a href="#7-打包网络请求：" class="headerlink" title="7.打包网络请求："></a>7.打包网络请求：</h5><p>当接口设计不能满足我们的业务需求时. 例如可能一个界面需要请求多个接口, 或是网络良好, 处于Wifi状态下时我们想获取更多的数据等.</p>
+<p>这时就可以打包一些网络请求, 例如请求列表的同时, 获取Header点击率较高的的item项的详情数据.可以通过一些统计数据来帮助我们定位用户接下来的操作是高概率的, 提前获取这部分的数据.</p>
+<h5 id="8-监听相关状态并进行相应的优化："><a href="#8-监听相关状态并进行相应的优化：" class="headerlink" title="8.监听相关状态并进行相应的优化："></a>8.监听相关状态并进行相应的优化：</h5><p>通过监听设备的状态:</p>
+<ul>
+<li>休眠状态</li>
+</ul>
+<ul>
+<li>充电状态</li>
+</ul>
+<ul>
+<li>网络状态</li>
+</ul>
+<p>结合JobScheduler来根据实际情况做网络请求. 比方说Splash闪屏广告图片, 我们可以在连接到Wifi时下载缓存到本地; 新闻类的App可以在充电, Wifi状态下做离线缓存.</p>
+<h5 id="9-弱网下的操作"><a href="#9-弱网下的操作" class="headerlink" title="9.弱网下的操作"></a>9.弱网下的操作</h5><ul>
+<li>压缩/减少数据传输量</li>
+</ul>
+<ul>
+<li>利用缓存减少网络传输</li>
+</ul>
+<ul>
+<li>针对弱网(移动网络), 不自动加载图片</li>
+</ul>
+<ul>
+<li>界面先反馈, 请求延迟提交：例如, 用户点赞操作, 可以直接给出界面的点赞成功的反馈, 使用JobScheduler在网络情况较好的时候打包请求.</li>
+</ul>
+<h4 id="分析工具"><a href="#分析工具" class="headerlink" title="分析工具"></a>分析工具</h4><h5 id="性能："><a href="#性能：" class="headerlink" title="性能："></a>性能：</h5><ul>
+<li>Profile GPU Rendering</li>
+<li>TraceView</li>
+<li>Systrace UI</li>
+</ul>
+<h5 id="内存"><a href="#内存" class="headerlink" title="内存"></a>内存</h5><ul>
+<li>Memory Monitor</li>
+</ul>
+<p>Memory Monitor是一款使用非常简单的图形化工具，可以很好地监控系统或应用的内存使用情况，主要有以下功能：</p>
+<p>显示可用和已用内存，并且以时间为维度实时反应内存分配和回收情况。</p>
+<p>快速判断应用程序的运行缓慢是否由于过度的内存回收导致。</p>
+<p>快速判断应用是否由于内存不足导致程序崩溃。</p>
+<ul>
+<li>Heap Viewer</li>
+</ul>
+<p>Heap Viewer的主要功能是查看不同数据类型在内存中的使用情况，可以看到当前进程中的Heap Size的情况，分别有哪些类型的数据，以及各种类型数据占比情况。通过分析这些数据来找到大的内存对象，再进一步分析这些大对象，进而通过优化减少内存开销，也可以通过数据的变化发现内存泄漏。</p>
+<ul>
+<li>Allocation Tracker</li>
+</ul>
+<p>Memory Monitor和Heap Viewer都可以很直观且实时地监控内存使用情况，还能发现内存问题，但发现内存问题后不能再进一步找到原因，或者发现一块异常内存，但不能区别是否正常，同时在发现问题后，也不能定位到具体的类和方法。这时就需要使用另一个内存分析工具Allocation Tracker，进行更详细的分析，Allocation Tracker可以分配跟踪记录应用程序的内存分配，并列出了它们的调用堆栈，可以查看所有对象内存分配的周期。</p>
+<ul>
+<li>Memory Analyzer Tool(MAT)</li>
+</ul>
+<p>MAT是一个快速，功能丰富的Java Heap分析工具，通过分析Java进程的内存快照HPROF分析，从众多的对象中分析，快速计算出在内存中对象占用的大小，查看哪些对象不能被垃圾收集器回收，并可以通过视图直观地查看可能造成这种结果的对象。</p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2020/09/28/lock%E4%B8%8Esynchronized%E5%8C%BA%E5%88%AB/" rel="prev" title="">
+      <i class="fa fa-chevron-left"></i> 
+    </a></div>
+      <div class="post-nav-item"></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%AE%89%E5%8D%93%E6%80%A7%E8%83%BD%E5%88%86%E6%9E%90%E4%BC%98%E5%8C%96%E7%AF%87%EF%BC%88%E5%BF%AB%E3%80%81%E7%A8%B3%E3%80%81%E7%9C%81%E3%80%81%E5%B0%8F%EF%BC%89"><span class="nav-number">1.</span> <span class="nav-text">安卓性能分析优化篇（快、稳、省、小）</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E4%B8%80%E3%80%81%E5%90%AF%E5%8A%A8%E4%BC%98%E5%8C%96"><span class="nav-number">1.0.0.1.</span> <span class="nav-text">一、启动优化</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E4%BA%8C%E3%80%81%E4%BB%A3%E7%A0%81%E5%B8%83%E5%B1%80%E4%BC%98%E5%8C%96"><span class="nav-number">1.0.0.2.</span> <span class="nav-text">二、代码布局优化</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#%E5%87%8F%E5%B0%91%E5%B8%83%E5%B1%80%E5%B1%82%E7%BA%A7"><span class="nav-number">1.0.0.2.1.</span> <span class="nav-text">减少布局层级</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#2-%E5%96%84%E7%94%A8tag"><span class="nav-number">1.0.0.2.2.</span> <span class="nav-text">2.善用tag</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#3-%E4%BD%BF%E7%94%A8Layout-Inspector%E8%BF%9B%E8%A1%8C%E5%B8%83%E5%B1%80%E5%88%86%E6%9E%90%E4%B8%8E%E4%BC%98%E5%8C%96"><span class="nav-number">1.0.0.2.3.</span> <span class="nav-text">3.使用Layout Inspector进行布局分析与优化</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#4-%E9%81%BF%E5%85%8D%E8%BF%87%E5%BA%A6%E7%BB%98%E5%88%B6-Overdraw"><span class="nav-number">1.0.0.2.4.</span> <span class="nav-text">4.避免过度绘制(Overdraw)</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#5-%E4%B8%8D%E5%9C%A8%E4%B8%BB%E7%BA%BF%E7%A8%8B%E6%88%96%E8%87%AA%E5%AE%9A%E4%B9%89View%E7%9A%84onDraw-%E6%96%B9%E6%B3%95%E4%B8%AD%E8%BF%9B%E8%A1%8C%E8%80%97%E6%97%B6%E6%93%8D%E4%BD%9C"><span class="nav-number">1.0.0.2.5.</span> <span class="nav-text">5.不在主线程或自定义View的onDraw()方法中进行耗时操作</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E4%B8%89%E3%80%81%E5%86%85%E5%AD%98%E4%BC%98%E5%8C%96%E7%B1%BB"><span class="nav-number">1.0.0.3.</span> <span class="nav-text">三、内存优化类</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#1-%E5%B8%B8%E8%A7%81%E5%86%85%E5%AD%98%E6%B3%84%E6%BC%8F%E5%9C%BA%E6%99%AF"><span class="nav-number">1.0.0.3.1.</span> <span class="nav-text">1.常见内存泄漏场景</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#2-%E4%BC%98%E5%8C%96%E5%86%85%E5%AD%98%E7%A9%BA%E9%97%B4"><span class="nav-number">1.0.0.3.2.</span> <span class="nav-text">2.优化内存空间</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#3-%E5%87%8F%E5%B0%91%E5%AE%89%E8%A3%85%E5%8C%85%E5%A4%A7%E5%B0%8F%E7%9A%84%E5%B8%B8%E7%94%A8%E6%96%B9%E6%A1%88"><span class="nav-number">1.0.0.3.3.</span> <span class="nav-text">3.减少安装包大小的常用方案:</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%9B%9B%E3%80%81%E7%BD%91%E7%BB%9C%E4%BC%98%E5%8C%96%E7%B1%BB%EF%BC%9A"><span class="nav-number">1.0.0.4.</span> <span class="nav-text">四、网络优化类：</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#1-%E5%87%8F%E5%B0%91%E7%BD%91%E7%BB%9C%E6%95%B0%E6%8D%AE%E8%8E%B7%E5%8F%96%E7%9A%84%E9%A2%91%E6%AC%A1%EF%BC%9A"><span class="nav-number">1.0.0.4.1.</span> <span class="nav-text">1.减少网络数据获取的频次：</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#2-%E5%87%8F%E5%B0%91%E8%8E%B7%E5%8F%96%E6%95%B0%E6%8D%AE%E5%8C%85%E7%9A%84%E5%A4%A7%E5%B0%8F%EF%BC%9A"><span class="nav-number">1.0.0.4.2.</span> <span class="nav-text">2.减少获取数据包的大小：</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#3-Gzip%E5%8E%8B%E7%BC%A9%EF%BC%9A"><span class="nav-number">1.0.0.4.3.</span> <span class="nav-text">3.Gzip压缩：</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#4-%E8%80%83%E8%99%91%E4%BD%BF%E7%94%A8Protocol-Buffer%E4%BB%A3%E6%9B%BFJSON%EF%BC%9A"><span class="nav-number">1.0.0.4.4.</span> <span class="nav-text">4.考虑使用Protocol Buffer代替JSON：</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#5-%E6%8E%A7%E5%88%B6%E5%9B%BE%E7%89%87%E7%9A%84%E5%A4%A7%E5%B0%8F%EF%BC%9A"><span class="nav-number">1.0.0.4.5.</span> <span class="nav-text">5.控制图片的大小：</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#6-%E7%BD%91%E7%BB%9C%E7%BC%93%E5%AD%98%EF%BC%9A"><span class="nav-number">1.0.0.4.6.</span> <span class="nav-text">6.网络缓存：</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#7-%E6%89%93%E5%8C%85%E7%BD%91%E7%BB%9C%E8%AF%B7%E6%B1%82%EF%BC%9A"><span class="nav-number">1.0.0.4.7.</span> <span class="nav-text">7.打包网络请求：</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#8-%E7%9B%91%E5%90%AC%E7%9B%B8%E5%85%B3%E7%8A%B6%E6%80%81%E5%B9%B6%E8%BF%9B%E8%A1%8C%E7%9B%B8%E5%BA%94%E7%9A%84%E4%BC%98%E5%8C%96%EF%BC%9A"><span class="nav-number">1.0.0.4.8.</span> <span class="nav-text">8.监听相关状态并进行相应的优化：</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#9-%E5%BC%B1%E7%BD%91%E4%B8%8B%E7%9A%84%E6%93%8D%E4%BD%9C"><span class="nav-number">1.0.0.4.9.</span> <span class="nav-text">9.弱网下的操作</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%88%86%E6%9E%90%E5%B7%A5%E5%85%B7"><span class="nav-number">1.0.0.5.</span> <span class="nav-text">分析工具</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#%E6%80%A7%E8%83%BD%EF%BC%9A"><span class="nav-number">1.0.0.5.1.</span> <span class="nav-text">性能：</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%E5%86%85%E5%AD%98"><span class="nav-number">1.0.0.5.2.</span> <span class="nav-text">内存</span></a></li></ol></li></ol></li></ol></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">John Doe</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">4</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">John Doe</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a>
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>
